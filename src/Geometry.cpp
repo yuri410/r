@@ -21,7 +21,7 @@ bool SphereShape::Intersects(const Ray& ray, Vec3& point, Vec3& normal)
 		{
 			const float dd = sqrtf(m_radius * m_radius - dist * dist);
 			Vec3 t0 = ray.m_direction * (scLen*cosTheta - dd);
-			point = ray.m_origin + ray.m_direction;
+			point = ray.m_origin + t0;
 
 			normal = (point - m_center).Normal();
 
@@ -52,11 +52,12 @@ QuadShape::QuadShape(Vec3 center, Vec3 normal, Vec3 tangent, float width, float 
 bool QuadShape::Intersects(const Ray& ray, Vec3& point, Vec3& normal)
 {
 	float cosTheta = ray.m_direction.Dot(m_normal);
+	Vec3 sa = m_corners[0] - ray.m_origin;
+	float dist = sa.Dot(m_normal);
 
-	if (fabs(cosTheta) > FLT_EPSILON)
+	if (fabs(cosTheta) > FLT_EPSILON && // ray is not parallel
+		cosTheta * dist > 0) // ray is pointing plane
 	{
-		Vec3 sa = m_corners[0] - ray.m_origin;
-		float dist = sa.Dot(m_normal);
 		float rayDist = (dist / cosTheta);
 
 		Vec3 si = ray.m_origin + ray.m_direction*rayDist;
@@ -69,7 +70,7 @@ bool QuadShape::Intersects(const Ray& ray, Vec3& point, Vec3& normal)
 		// on the same side of edges
 		if (r1*r2 >= 0 && r1*r3 >= 0 && r1*r4 >= 0)
 		{
-			normal = m_normal * (dist > 0 ? 1.0f : -1.0f);
+			normal = m_normal * (dist > 0 ? -1.0f : 1.0f);
 			point = si;
 			return true;
 		}

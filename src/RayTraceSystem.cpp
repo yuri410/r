@@ -1,6 +1,8 @@
 #include "RayTraceSystem.h"
 #include "Random.h"
 #include "Scene.h"
+#include "SceneObject.h"
+#include "Material.h"
 #include "Camera.h"
 
 RayTraceSystem::RayTraceSystem(int imageWidth, int imageHeight, int tileSize, int numThreads)
@@ -83,6 +85,54 @@ void RayTraceSystem::ReportResult(int x, int y, Vec3 p)
 	m_resultMutex.unlock();
 }
 
+Vec3 RayTraceSystem::Trace(const Ray& ray, int depth, Random& rnd)
+{
+	const float pi = 3.14f;
+
+	Vec3 result;
+	SceneIntersection intersection;
+	if (m_scene->Intersect(ray, intersection))
+	{
+		//result = Vec3(1, 1, 1);
+		Material* mtrl = intersection.m_sceneObject->GetMaterial();
+		result += mtrl->m_emissive;// *fabs(intersection.m_normal.Dot(ray.m_direction));
+
+		if (depth < 5)
+		{
+			Vec3 basisX, basisY, basisZ = intersection.m_normal;
+			muAutoFrameZ(basisZ, basisX, basisY);
+
+			float theta = rnd.FloatSample() * 2 * pi;
+			float phi = rnd.FloatSample() * pi / 2;
+			float sinR2 = sin(phi);
+			float cosR2 = cos(phi);
+
+			//float r2 = rnd.FloatSample();
+			//float sinR2 = sqrtf(r2);
+			//float cosR2 = sqrtf(1 - r2);
+
+			Vec3 xi = basisX*(cos(theta)*sinR2) + basisY*(sin(theta)*sinR2) + basisZ * cosR2;
+			xi = xi.Normal();
+
+			float ndl = std::max<float>(0.0f, intersection.m_normal.Dot(xi));
+
+			Ray ray2 = { intersection.m_point + basisZ * 0.01f, xi };
+			result += Trace(ray2, depth + 1, rnd) * mtrl->m_albedo;
+		}
+
+			//SceneIntersection intersection2;
+
+			//if (m_scene->Intersect(ray2, intersection2))
+			//{
+			//	result += (ndl / pi) * intersection2.m_sceneObject->GetMaterial()->m_emissive;
+			//}
+		
+		//intersection.m_sceneObject->GetMaterial()
+		//result = intersection.m_sceneObject->GetMaterial()->m_albedo;
+	}
+	return result;
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 RayTraceSystem::RenderThread::RenderThread(RayTraceSystem* sys)
@@ -140,20 +190,20 @@ void RayTraceSystem::RenderThread::Run()
 			assert(task.m_x < m_system->m_imageWidth);
 			assert(task.m_y < m_system->m_imageHeight);
 
-			for (int s = 0; s < 4; s++)
+			for (int s = 0; s < 512; s++)
 			{
 				float r1 = rnd.FloatSample() * 2 - 1;
 				float r2 = rnd.FloatSample() * 2 - 1;
 
-				float dx = sqrt(fabs(r1)) * (r1 > 0 ? 1 : -1) + 0.5f;
-				float dy = sqrt(fabs(r2)) * (r2 > 0 ? 1 : -1) + 0.5f;
+				float dx = (1 - sqrt(fabs(r1))) * (r1 > 0 ? 1 : -1) + 0.5f;
+				float dy = (1 - sqrt(fabs(r2))) * (r2 > 0 ? 1 : -1) + 0.5f;
 
-				//float r1 = rnd.FloatSample() * 2;
-				//float r2 = rnd.FloatSample() * 2;
+				//float r1 = rnd.FloatSample() * 2 - 1;
+				//float r2 = rnd.FloatSample() * 2 - 1;
 
-				//float dx = r1 < 1 ? sqrt(r1) - 1 : 1 - sqrt(2 - r1);
-				//float dy = r2 < 1 ? sqrt(r2) - 1 : 1 - sqrt(2 - r2);
-				//
+				//float dx = r1 < 0 ? sqrt(r1 + 1) - 1 : 1 - sqrt(1 - r1);
+				//float dy = r2 < 0 ? sqrt(r2 + 1) - 1 : 1 - sqrt(1 - r2);
+
 				//dx += 0.5f; dy += 0.5f;
 
 				float x = (task.m_x + dx) * invWidth;
@@ -163,11 +213,8 @@ void RayTraceSystem::RenderThread::Run()
 				{
 					Ray ray = m_system->m_scene->GetCamera()->ComputeCameraRay(x, y);
 			
-					SceneIntersection intersection;
-					if (m_system->m_scene->Intersect(ray, intersection))
-					{
-						m_system->ReportResult(task.m_x, task.m_y, Vec3(1, 1, 1));
-					}
+					Vec3 result = m_system->Trace(ray, 0, rnd);
+					m_system->ReportResult(task.m_x, task.m_y, result);
 				}
 
 			}

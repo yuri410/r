@@ -59,6 +59,8 @@ private:
 
 	void ReportResult(int x, int y, Vec3 p);
 
+	Vec3 Trace(const Ray& ray, int depth, Random& rnd);
+
 	Vec3* m_resultBuffer;
 	Vec3* m_resultBufferTemp;
 	std::mutex m_resultMutex;
