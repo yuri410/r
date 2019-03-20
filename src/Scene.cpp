@@ -6,20 +6,74 @@
 
 Scene::Scene(float cameraAspectRatio, float cameraFovY)
 {
-	m_camera = new Camera({ 13, 2, 1 }, cameraFovY, cameraAspectRatio);
+	int sceneId = 1;
+	if (sceneId == 0)
+	{
+		m_camera = new Camera({ 13, 2, 1 }, cameraFovY, cameraAspectRatio);
 
-	float rs = 8;
+		float rs = 8;
 
-	//m_sceneObjects.push_back(new SceneObject(new Material({ 0.5f,0.5f,0.5f }, { 100,100,100 }, 0), new SphereShape({ 0, 0,  4.8f }, 1)));
-	m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.5f,0.5f,0.5f }), new SphereShape({ -1, -2.5f, -1.5f }, 1.5f)));
-	m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.5f,0.5f,0.5f }), new SphereShape({ -2, 1, -2.5f }, 1.5f)));
+		//m_sceneObjects.push_back(new SceneObject(new Material({ 0.5f,0.5f,0.5f }, { 100,100,100 }, 0), new SphereShape({ 0, 0,  4.8f }, 1)));
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.5f,0.5f,0.5f }), new SphereShape({ -2, -2.5f, -1.5f }, 1.5f)));
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.5f,0.5f,0.5f }, {}, 1, MaterialType::MicrofacetBRDF), new SphereShape({ -2, 1, -2.5f }, 1.5f)));
 
-	m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), new QuadShape({ -rs*0.5f, 0, 0 }, {  1, 0,  0 }, { 0,  1, 0 }, rs, rs)));
-	//m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), new QuadShape({  rs*0.5f, 0, 0 }, { -1, 0,  0 }, { 0, -1, 0 }, rs, rs)));
-	m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.25f,0.25f }), new QuadShape({ 0,-rs*0.5f, 0 }, { 0,  1, 0 }, { 0, 0,  1 }, rs, rs)));
-	m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.25f,0.25f,0.75f }), new QuadShape({ 0, rs*0.5f, 0 }, { 0, -1, 0 }, { 0, 0, -1 }, rs, rs)));
-	m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), new QuadShape({ 0, 0,-rs*0.5f }, { 0, 0,  1 }, {  1, 0, 0 }, rs, rs)));
-	m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }, Vec3(10,10,10), 0), new QuadShape({ 0, 0, rs*0.5f }, { 0, 0, -1 }, { -1, 0, 0 }, rs, rs)));
+		//m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.5f,0.5f,0.5f }, {30,30,30},0), new SphereShape({ -0, 0, rs*0.5f }, 1.0f)));
+
+
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), new QuadShape({ -rs*0.5f, 0, 0 }, { 1, 0,  0 }, { 0,  1, 0 }, rs, rs)));
+		//m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), new QuadShape({  rs*0.5f, 0, 0 }, { -1, 0,  0 }, { 0, -1, 0 }, rs, rs)));
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.25f,0.25f }), new QuadShape({ 0,-rs*0.5f, 0 }, { 0,  1, 0 }, { 0, 0,  1 }, rs, rs)));
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.25f,0.25f,0.75f }), new QuadShape({ 0, rs*0.5f, 0 }, { 0, -1, 0 }, { 0, 0, -1 }, rs, rs)));
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), new QuadShape({ 0, 0,-rs*0.5f }, { 0, 0,  1 }, { 1, 0, 0 }, rs, rs)));
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), new QuadShape({ 0, 0, rs*0.5f }, { 0, 0, -1 }, { -1, 0, 0 }, rs, rs)));
+	}
+	else if (sceneId == 1)
+	{
+		int xcount = 4;
+		int ycount = 3;
+
+		float xSpan = 24;
+		float ySpan = xSpan / xcount*ycount;
+		
+		cameraFovY = 30;
+
+		float viewDistance = ySpan*0.5f / tan(GL::Rad(cameraFovY / 2));
+		m_camera = new Camera({ viewDistance, 0, 0 }, cameraFovY, cameraAspectRatio);
+
+		float cellSize = xSpan / xcount;
+		float ballRadius = cellSize*0.5f*0.67f;
+
+		int counter = 0;
+		int totalCount = xcount*ycount;
+		for (int y = 0; y < ycount; y++)
+		{
+			for (int x = 0; x < xcount; x++)
+			{
+				float cellX = (x+0.5f) * cellSize - xSpan / 2;
+				float cellY = (ycount - y - 1 + 0.5f) * cellSize - ySpan / 2;
+				//float cellY = (y + 0.5f) * cellSize - ySpan / 2;
+
+				Vec3 cellPos = { -cellSize*0.5f, cellX, cellY };
+
+				m_sceneObjects.push_back(new SceneObject(
+					//new Material(Vec3{ 0.5f,0.5f,0.5f }, {}, (float)counter/(totalCount -1), counter == 0 ? MaterialType::Reflection : MaterialType::MicrofacetBRDF),
+					new Material(Vec3{ 0.5f,0.5f,0.5f }, {}, max(1e-3,(float)counter / (totalCount - 1)), MaterialType::MicrofacetBRDF),
+					new SphereShape(cellPos, ballRadius)
+				));
+
+				float ws = cellSize - 0.02f;
+				m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), new QuadShape(Vec3{ -ws*0.5f, 0, 0 }+cellPos, { 1, 0,  0 }, { 0,  1, 0 }, ws, ws)));
+				m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.50f,0.50f }), new QuadShape(Vec3{ 0,-ws*0.5f, 0 }+cellPos, { 0,  1, 0 }, { 0, 0,  1 }, ws, ws)));
+				m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.50f,0.75f,0.75f }), new QuadShape(Vec3{ 0, ws*0.5f, 0 }+cellPos, { 0, -1, 0 }, { 0, 0, -1 }, ws, ws)));
+				m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.50f,0.75f,0.50f }), new QuadShape(Vec3{ 0, 0,-ws*0.5f }+cellPos, { 0, 0,  1 }, { 1, 0, 0 }, ws, ws)));
+				m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.50f }, Vec3(5, 5, 5), 1), new QuadShape(Vec3{ 0, 0, ws*0.5f }+cellPos, { 0, 0, -1 }, { -1, 0, 0 }, ws, ws)));
+
+				counter++;
+			}
+		}
+	}
+
+
 }
 
 Scene::~Scene()
@@ -33,11 +87,6 @@ Scene::~Scene()
 
 bool Scene::Intersect(const Ray& ray, SceneIntersection& intersection)
 {
-	//SphereShape sphere(Vec3(0, 0, 1), 1);
-	//
-	//Vec3 pt, n;
-	//return sphere.Intersects(ray, pt, n);
-	
 	float minDist = FLT_MAX;
 	bool  intersected = false;
 	Vec3  pt, n;

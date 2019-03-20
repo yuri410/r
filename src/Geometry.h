@@ -35,3 +35,25 @@ private:
 	Vec3  m_normal;
 	Vec3  m_edgeNormal[4];
 };
+
+class CylinderShape : public IGeometry
+{
+public:
+	CylinderShape(Vec3 center, Vec3 axis, float height, float radius);
+
+	bool Intersects(const Ray& ray, Vec3& point, Vec3& normal) override;
+
+private:
+	Vec3  m_center;
+	Vec3  m_axis;
+	float m_height;
+	float m_radius;
+};
+
+class TrimeshShape : public IGeometry
+{
+public:
+
+private:
+
+};

@@ -3,7 +3,7 @@
 #include "RayTraceSystem.h"
 
 const int WindowWidth = 1280;
-const int WindowHeight = 720;
+const int WindowHeight = 960;
 
 int main()
 {

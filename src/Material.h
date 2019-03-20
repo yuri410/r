@@ -5,14 +5,16 @@
 enum struct MaterialType
 {
 	Diffuse,
-	Specular,
+	Reflection,
+	MicrofacetBRDF
 };
 
 struct Material
 {
 	Vec3 m_albedo;
 	Vec3 m_emissive;
-	float m_roughness;
+	Vec3 m_reflectivity = Vec3(1.0f, 1.0f, 1.0f);
+	float m_roughness = 1.0f;
 
 	MaterialType m_type = MaterialType::Diffuse;
 

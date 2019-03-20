@@ -18,7 +18,9 @@ public:
 	bool Intersect(const Ray& ray, SceneIntersection& intersection);
 
 	Camera* GetCamera() const { return m_camera; }
+
 private:
+
 	Camera* m_camera = nullptr;
 	
 	std::vector<SceneObject*> m_sceneObjects;

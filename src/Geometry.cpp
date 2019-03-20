@@ -77,3 +77,14 @@ bool QuadShape::Intersects(const Ray& ray, Vec3& point, Vec3& normal)
 	}
 	return false;
 }
+
+CylinderShape::CylinderShape(Vec3 center, Vec3 axis, float height, float radius)
+	: m_center(center), m_axis(axis), m_height(height), m_radius(radius)
+{
+
+}
+
+bool CylinderShape::Intersects(const Ray& ray, Vec3& point, Vec3& normal)
+{
+	return false;
+}
