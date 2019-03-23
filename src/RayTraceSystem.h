@@ -19,10 +19,6 @@ public:
 
 	const GL::Texture& GetResultTexture() { return m_presentTexture; }
 private:
-	struct ComposingPixel
-	{
-		std::vector<Vec3> m_samples;
-	};
 
 	struct RenderTask
 	{
@@ -61,11 +57,10 @@ private:
 
 	Vec3 Trace(const Ray& ray, int depth, Random& rnd);
 
+	int*  m_sampleCounter;
 	Vec3* m_resultBuffer;
 	Vec3* m_resultBufferTemp;
 	std::mutex m_resultMutex;
-
-	ComposingPixel* m_samples;
 
 	std::vector<RenderThread*> m_renderThreads;
 

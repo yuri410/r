@@ -5,8 +5,11 @@
     <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="SceneObject.cpp" />
     <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Random.cpp" />
     <ClCompile Include="Common.cpp" />
+    <ClCompile Include="RayTraceSystem.cpp" />
+    <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="Math.cpp" />
+    <ClCompile Include="Bvh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Geometry.h" />
@@ -14,6 +17,10 @@
     <ClInclude Include="Material.h" />
     <ClInclude Include="SceneObject.h" />
     <ClInclude Include="Camera.h" />
-    <ClInclude Include="Random.h" />
+    <ClInclude Include="RayTraceSystem.h" />
+    <ClInclude Include="Scene.h" />
+    <ClInclude Include="Math.h" />
+    <ClInclude Include="BRDF.h" />
+    <ClInclude Include="Bvh.h" />
   </ItemGroup>
 </Project>

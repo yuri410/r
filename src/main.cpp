@@ -48,7 +48,7 @@ int main()
 	program.SetUniform(program.GetUniform("tex"), 0);
 	program.SetUniform(program.GetUniform("exposure"), 1.0f);
 
-	RayTraceSystem rayTracer(WindowWidth, WindowHeight, 16, 8);
+	RayTraceSystem rayTracer(WindowWidth, WindowHeight, 16, 4);
 	rayTracer.Start();
 
 	GL::Event ev;
@@ -62,7 +62,7 @@ int main()
 
 		gl.BindTexture(rayTracer.GetResultTexture(), 0);
 		gl.DrawArrays(vao, GL::Primitive::Triangles, 0, 3);
-
+		
 		window.Present();
 	}
 

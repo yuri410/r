@@ -1,4 +1,5 @@
 #include "Camera.h"
+#include "Math.h"
 
 Vec3 Unproject(const Vec3& p, const GL::Mat4& invViewProj)
 {

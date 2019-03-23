@@ -1,18 +1,18 @@
 #include "RayTraceSystem.h"
-#include "Random.h"
+#include "Math.h"
 #include "Scene.h"
 #include "SceneObject.h"
 #include "Material.h"
 #include "Camera.h"
+#include "BRDF.h"
 
 RayTraceSystem::RayTraceSystem(int imageWidth, int imageHeight, int tileSize, int numThreads)
 	: m_imageWidth(imageWidth), m_imageHeight(imageHeight), m_tileSize(tileSize), m_threadCount(numThreads)
 {
 	m_resultBuffer = new Vec3[imageHeight*imageWidth]();
 	m_resultBufferTemp = new Vec3[imageHeight*imageWidth]();
+	m_sampleCounter = new int[imageHeight*imageWidth]();
 	m_presentTexture.SetFilters(GL::Filter::Nearest, GL::Filter::Nearest);
-
-	m_samples = new ComposingPixel[imageHeight*imageWidth]();
 
 	m_scene = new Scene(imageWidth / (float)imageHeight, 60);
 }
@@ -27,6 +27,9 @@ RayTraceSystem::~RayTraceSystem()
 
 	delete m_scene;
 	m_scene = nullptr;
+	delete[] m_sampleCounter;
+	delete[] m_resultBuffer;
+	delete[] m_resultBufferTemp;
 }
 
 void RayTraceSystem::Start()
@@ -105,55 +108,30 @@ void RayTraceSystem::CopyBufferData()
 
 void RayTraceSystem::ReportResult(int x, int y, Vec3 p)
 {
-	ComposingPixel& cp = m_samples[y*m_imageWidth + x];
-	cp.m_samples.push_back(p);
-
-	Vec3 res;
-	for (auto& s : cp.m_samples)
-	{
-		res += s;
-	}
-	if (cp.m_samples.size())
-		res = res / (float)cp.m_samples.size();
-
 	m_resultMutex.lock();
-	m_resultBuffer[y*m_imageWidth + x] = res;
+	
+	int idx = y*m_imageWidth + x;
+	int sampleCount = m_sampleCounter[idx];
+	m_sampleCounter[idx]++;
+
+	if (sampleCount == 0)
+	{
+		m_resultBuffer[idx] = p;
+	}
+	else
+	{
+		m_resultBuffer[idx] = m_resultBuffer[idx] * ((float)sampleCount / (sampleCount + 1)) + p / (sampleCount + 1);
+	}
+
 	m_resultMutex.unlock();
-}
-
-float sqr(float x) { return x*x; }
-
-// GGX
-float NDF(float NdotH, float roughness)
-{
-	float pi = 3.1415927f;
-
-	float a2 = roughness*roughness;
-	return a2 / (pi * sqr((a2 - 1)*NdotH*NdotH + 1));
-}
-
-// Schlick 
-float GSF(float NdotL, float NdotV, float roughness)
-{
-	float k = roughness / 2;
-
-	float SmithL = (NdotL) / (NdotL * (1 - k) + k);
-	float SmithV = (NdotV) / (NdotV * (1 - k) + k);
-
-	return (SmithL * SmithV);
-}
-
-Vec3 F(Vec3 f0, float LdotH)
-{
-	return f0 + (Vec3(1.0f, 1.0f, 1.0f) - f0) * powf(LdotH, 5);
 }
 
 
 Vec3 RayTraceSystem::Trace(const Ray& ray, int depth, Random& rnd)
 {
-	const float pi = 3.14159f;
-	const float bias = 0.01f;
-
+	const float bias = 0.00001f;
+	//const float bias = 0.01f;
+	
 	Vec3 result;
 	SceneIntersection intersection;
 	if (m_scene->Intersect(ray, intersection))
@@ -165,118 +143,62 @@ Vec3 RayTraceSystem::Trace(const Ray& ray, int depth, Random& rnd)
 		{
 			if (mtrl->m_type == MaterialType::Diffuse)
 			{
-				Vec3 basisX, basisY, basisZ = intersection.m_normal;
-				muAutoFrameZ(basisZ, basisX, basisY);
-				
-				bool uniform = false;
-				float theta = rnd.FloatSample() * 2 * pi;
-				float sinPhi, cosPhi;
+				float e1 = rnd.FloatSample();
+				float e2 = rnd.FloatSample();
+
 				float pdf;
+				HemisphereCoord c;
+				ImportanceSampleCosine(e1, e2, c, pdf);
 
-				if (uniform)
-				{
-					float r2 = rnd.FloatSample();
-					cosPhi = r2;
-					sinPhi = sqrtf(1 - cosPhi*cosPhi);
-					pdf = 1.0f / (2 * pi);
-				}
-				else
-				{
-					float r2 = rnd.FloatSample();
-					sinPhi = sqrtf(r2);
-					cosPhi = sqrtf(1 - r2);
-					pdf = cosPhi / pi;
-				}
+				Vec3 xi = c.GetCartesianCoord_AutoFrameZ(intersection.m_normal);
 
-				Vec3 xi = basisX*(cos(theta)*sinPhi) + basisY*(sin(theta)*sinPhi) + basisZ * cosPhi;
-				xi = xi.Normal();
+				float ndl = c.m_cosTheta;
 
-				float ndl = cosPhi;
-
-				Ray ray2 = { intersection.m_point + basisZ * bias, xi };
-				result += Trace(ray2, depth + 1, rnd) * mtrl->m_albedo * (ndl / (pi*pdf));
+				Ray nextRay = { intersection.m_point + intersection.m_normal * bias, xi };
+				result += Trace(nextRay, depth + 1, rnd) * mtrl->m_albedo * (ndl / (PI*pdf));
 			}
 			else if (mtrl->m_type == MaterialType::Reflection)
 			{
 				float ndr = intersection.m_normal.Dot(ray.m_direction);
 
-				Vec3 r = ray.m_direction - intersection.m_normal * (2 * ndr);
-				r = r.Normal();
+				Vec3 r = (ray.m_direction - intersection.m_normal * (2 * ndr)).Normal();
 
-				Ray ray2 = { intersection.m_point + intersection.m_normal * bias, r };
-				result += Trace(ray2, depth + 1, rnd);// * mtrl->m_albedo;
+				Ray nextRay = { intersection.m_point + intersection.m_normal * bias, r };
+				result += Trace(nextRay, depth + 1, rnd) * mtrl->m_reflectivity;
 			}
 			else if (mtrl->m_type == MaterialType::MicrofacetBRDF)
 			{
-				Vec3 basisX, basisY, basisZ = intersection.m_normal;
-				muAutoFrameZ(basisZ, basisX, basisY);
-
-				int   mode = 2;
-				float theta = rnd.FloatSample() * 2 * pi;
-				float sinPhi, cosPhi;
-				float pdf;
+				float e1 = rnd.FloatSample();
+				float e2 = rnd.FloatSample();
 
 				float roughness = mtrl->m_roughness;
 
-				if (mode == 0)
-				{
-					// uniform
-					float rn = rnd.FloatSample();
-					cosPhi = rn;
-					sinPhi = sqrtf(1 - cosPhi*cosPhi);
-					pdf = 1.0f / (2 * pi);
-				}
-				else if (mode == 1)
-				{
-					// cosine
-					float rn = rnd.FloatSample();
-					sinPhi = sqrtf(rn);
-					cosPhi = sqrtf(1 - rn);
-					pdf = cosPhi / pi;
-				}
-				else if (mode == 2)
-				{
-					// ggx
-					float rn = rnd.FloatSample();
+				float pdf;
+				HemisphereCoord c;
+				ImportanceSampleGGX(e1, e2, roughness, c, pdf);
 
-					float a2 = roughness*roughness;
+				Vec3 h = c.GetCartesianCoord_AutoFrameZ(intersection.m_normal);
 
-					float rc = (1 - rn) / ((a2 - 1.0) *rn + 1);
-					rc = min(1.0f, max(0.0f, rc));
+				float hdr = h.Dot(ray.m_direction);
 
-					cosPhi = sqrtf(rc);
-					sinPhi = sqrtf(1 - rc);
-
-					pdf = a2 * cosPhi / (pi * sqr((a2 - 1)*cosPhi*cosPhi + 1));
-				}
-
-				Vec3 xi, h;
-				{
-					h = basisX*(cos(theta)*sinPhi) + basisY*(sin(theta)*sinPhi) + basisZ * cosPhi;
-					h = h.Normal();
-
-					float hdr = h.Dot(ray.m_direction);
-
-					xi = ray.m_direction - h * (2 * hdr);
-					xi.Normal();
-				}
-
+				Vec3 xi = (ray.m_direction - h * (2 * hdr)).Normal();
+				
 				float ndl = xi.Dot(intersection.m_normal);
-				float ndh = (h.Dot(intersection.m_normal)); // cosPhi;
+				float ndh = (h.Dot(intersection.m_normal)); // cosTheta;
 				float ndv = -(ray.m_direction.Dot(intersection.m_normal));
 				float ldh = (h.Dot(xi));
 				float hdv = abs(h.Dot(ray.m_direction));
 
 				pdf = pdf / (4 * hdv);
 
-				if (ndv>0 && ndl>0 )
+				if (ndv > 0 && ndl > 0)
 				{
-					float D = NDF(ndh, roughness);
-					float G = GSF(ndl, ndv, roughness);
-					Vec3 Fr = F(mtrl->m_reflectivity, ldh);
+					float D = BRDF::NDF(ndh, roughness);
+					float G = BRDF::GSF(ndl, ndv, roughness);
+					Vec3 Fr = BRDF::F(mtrl->m_reflectivity, ldh);
 
-					Ray ray2 = { intersection.m_point + intersection.m_normal * bias, xi };
-					result += Trace(ray2, depth+1, rnd) * Fr * (D * G) / (4 * ndl * ndv) * (ndl / pdf);
+					Ray nextRay = { intersection.m_point + intersection.m_normal * bias, xi };
+					result += Trace(nextRay, depth + 1, rnd) * BRDF::CookTorrance(Fr, D, G, ndl, ndv) * (ndl / pdf);
 				}
 			}
 		}
@@ -341,7 +263,10 @@ void RayTraceSystem::RenderThread::Run()
 			assert(task.m_x < m_system->m_imageWidth);
 			assert(task.m_y < m_system->m_imageHeight);
 
-			for (int s = 0; s < 64; s++)
+			const int sampleCount = 16;
+
+			Vec3 result;
+			for (int s = 0; s < sampleCount; s++)
 			{
 				float r1 = rnd.FloatSample() * 2 - 1;
 				float r2 = rnd.FloatSample() * 2 - 1;
@@ -356,11 +281,12 @@ void RayTraceSystem::RenderThread::Run()
 				{
 					Ray ray = m_system->m_scene->GetCamera()->ComputeCameraRay(x, y);
 			
-					Vec3 result = m_system->Trace(ray, 0, rnd);
-					m_system->ReportResult(task.m_x, task.m_y, result);
+					result += m_system->Trace(ray, 0, rnd);
 				}
-
 			}
+
+			m_system->ReportResult(task.m_x, task.m_y, result / sampleCount);
+			AddJob(task);
 		}
 	}
 }

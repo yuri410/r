@@ -84,21 +84,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Bvh.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Common.cpp" />
     <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Random.cpp" />
     <ClCompile Include="RayTraceSystem.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneObject.cpp" />
+    <ClCompile Include="Math.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BRDF.h" />
+    <ClInclude Include="Bvh.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="Material.h" />
-    <ClInclude Include="Random.h" />
+    <ClInclude Include="Math.h" />
     <ClInclude Include="RayTraceSystem.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneObject.h" />

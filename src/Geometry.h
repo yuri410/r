@@ -36,6 +36,20 @@ private:
 	Vec3  m_edgeNormal[4];
 };
 
+class DiskShape : public IGeometry
+{
+public:
+	DiskShape(Vec3 center, Vec3 normal, float radius);
+
+	bool Intersects(const Ray& ray, Vec3& point, Vec3& normal) override;
+
+private:
+
+	Vec3  m_center;
+	Vec3  m_normal;
+	float m_radius;
+};
+
 class CylinderShape : public IGeometry
 {
 public:
@@ -44,6 +58,9 @@ public:
 	bool Intersects(const Ray& ray, Vec3& point, Vec3& normal) override;
 
 private:
+	bool IntersectsCap(const Ray& ray, const Vec3& capCenter, const Vec3& capNormal, Vec3& point, Vec3& normal) const;
+	bool IntersectsBody(const Ray& ray, Vec3& point, Vec3& normal) const;
+
 	Vec3  m_center;
 	Vec3  m_axis;
 	float m_height;
