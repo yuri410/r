@@ -328,7 +328,7 @@ namespace GL
 			window = reinterpret_cast<Window*>( ( (LPCREATESTRUCT)lParam )->lpCreateParams );
 			window->window = hwnd;
 
-			SetWindowLongPtr( hwnd, GWLP_USERDATA, reinterpret_cast<long>( window ) );
+			SetWindowLongPtr( hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( window ) );
 
 			return DefWindowProc( hwnd, msg, wParam, lParam );
 		} else {
