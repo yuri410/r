@@ -207,7 +207,7 @@ bool TrimeshShape::Intersects(const Ray& ray, Vec3& point, Vec3& normal)
 	return m_rootNode.Intersects(ray, point, normal, nearestDist);
 }
 
-TrimeshShape* TrimeshShape::GenerateNoiseQuad(Vec3 pos, double xSpan, double ySpan, int xSegments, int ySegments, const PerlinNoise& noise)
+TrimeshShape* TrimeshShape::GenerateNoiseQuad(Mat4 t, double xSpan, double ySpan, int xSegments, int ySegments, const PerlinNoise& noise)
 {
 	double noiseScale = min(xSpan, ySpan)*0.05;
 
@@ -230,16 +230,16 @@ TrimeshShape* TrimeshShape::GenerateNoiseQuad(Vec3 pos, double xSpan, double ySp
 
 			Triangle triA =
 			{
-				Vec3((float)xPos,  (float)yPosN, (float)noiseBL) + pos,
-				Vec3((float)xPosN, (float)yPos,  (float)noiseTR) + pos,
-				Vec3((float)xPos,  (float)yPos,  (float)noiseTL) + pos,
+				t * Vec3((float)xPos,  (float)yPosN, (float)noiseBL),
+				t * Vec3((float)xPosN, (float)yPos,  (float)noiseTR),
+				t * Vec3((float)xPos,  (float)yPos,  (float)noiseTL),
 			};
 
 			Triangle triB =
 			{
-				Vec3((float)xPosN, (float)yPos,  (float)noiseTR) + pos,
-				Vec3((float)xPos,  (float)yPosN, (float)noiseBL) + pos,
-				Vec3((float)xPosN, (float)yPosN, (float)noiseBR) + pos,
+				t * Vec3((float)xPosN, (float)yPos,  (float)noiseTR),
+				t * Vec3((float)xPos,  (float)yPosN, (float)noiseBL),
+				t * Vec3((float)xPosN, (float)yPosN, (float)noiseBR),
 			};
 
 			triangles.push_back(triA);

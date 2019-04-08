@@ -72,7 +72,7 @@ public:
 
 	bool Intersects(const Ray& ray, Vec3& point, Vec3& normal) override;
 
-	static TrimeshShape* GenerateNoiseQuad(Vec3 pos, double xSpan, double ySpan, int xSegments, int ySegments, const PerlinNoise& noise);
+	static TrimeshShape* GenerateNoiseQuad(Mat4 t, double xSpan, double ySpan, int xSegments, int ySegments, const PerlinNoise& noise);
 
 private:
 	struct BvhNode final

@@ -5,6 +5,26 @@
 #include "Material.h"
 #include "Math.h"
 
+namespace
+{
+	Mat4 GetWallTransform(Vec3 p, float angle = 0, Vec3 axis = {})
+	{
+		if (angle > 0)
+		{
+			Mat4 t;
+			t.Translate(p);
+
+			Mat4 r;
+			r.Rotate(axis, angle / 180.0 * PI);
+			return t*r;
+		}
+		
+		Mat4 t;
+		t.Translate(p);
+		return t;
+	}
+}
+
 Scene::Scene(float cameraAspectRatio, float cameraFovY)
 {
 	const int sceneId = 2;
@@ -15,14 +35,8 @@ Scene::Scene(float cameraAspectRatio, float cameraFovY)
 
 		float rs = 8;
 
-		//m_sceneObjects.push_back(new SceneObject(new Material({ 0.5f,0.5f,0.5f }, { 100,100,100 }, 0), new SphereShape({ 0, 0,  4.8f }, 1)));
 		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.5f,0.5f,0.5f }, {}, 1, MaterialType::Diffuse), 
 			new CylinderShape({ 0, 0, -2.0f }, { -1,1,1 }, 4, 1)));
-		//m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.5f,0.5f,0.5f }), new SphereShape({ -2, -2.5f, -1.5f }, 1.5f)));
-		//m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.5f,0.5f,0.5f }, {}, 1, MaterialType::MicrofacetBRDF), new SphereShape({ -2, 1, -2.5f }, 1.5f)));
-
-		//m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.5f,0.5f,0.5f }, {30,30,30},0), new CylinderShape({ 0, 0, rs*0.5f - 0.01f }, { 0,0,1 }, 0.01f, 2)));
-
 
 		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), new QuadShape({ -rs*0.5f, 0, 0 }, { 1, 0,  0 }, { 0,  1, 0 }, rs, rs)));
 		//m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), new QuadShape({  rs*0.5f, 0, 0 }, { -1, 0,  0 }, { 0, -1, 0 }, rs, rs)));
@@ -83,15 +97,22 @@ Scene::Scene(float cameraAspectRatio, float cameraFovY)
 
 		float rs = 8;
 
-		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), new QuadShape({ -rs*0.5f, 0, 0 }, { 1, 0,  0 }, { 0,  1, 0 }, rs, rs)));
-		//m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), new QuadShape({  rs*0.5f, 0, 0 }, { -1, 0,  0 }, { 0, -1, 0 }, rs, rs)));
-		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.25f,0.25f }), new QuadShape({ 0,-rs*0.5f, 0 }, { 0,  1, 0 }, { 0, 0,  1 }, rs, rs)));
-		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.25f,0.25f,0.75f }), new QuadShape({ 0, rs*0.5f, 0 }, { 0, -1, 0 }, { 0, 0, -1 }, rs, rs)));
-		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }, Vec3(10, 10, 10), 1), new QuadShape({ 0, 0, rs*0.5f }, { 0, 0, -1 }, { -1, 0, 0 }, rs, rs)));
+		PerlinNoise perlin(5.0, 0.1, 8, 8888);
 
-		PerlinNoise perlin(10.0, 0.1, 8, 8888);
-		TrimeshShape* meshFloor = TrimeshShape::GenerateNoiseQuad({ 0, 0,-rs*0.5f + 0.1f }, 5, 5, 250, 250, perlin);
+		TrimeshShape* meshWall1 = TrimeshShape::GenerateNoiseQuad(GetWallTransform({ -rs*0.5f + 0.1f, 0, 0 }, 90, {0,1,0}), rs*0.5, rs*0.5, 250, 250, perlin);
+		TrimeshShape* meshWall2 = TrimeshShape::GenerateNoiseQuad(GetWallTransform({ 0,-rs*0.5f + 0.1f, 0 }, 90, { 1,0,0 }), rs*0.5, rs*0.5, 250, 250, perlin);
+		TrimeshShape* meshWall3 = TrimeshShape::GenerateNoiseQuad(GetWallTransform({ 0, rs*0.5f - 0.1f, 0 }, 90, { 1,0,0 }), rs*0.5, rs*0.5, 250, 250, perlin);
+		TrimeshShape* meshCeil  = TrimeshShape::GenerateNoiseQuad(GetWallTransform({ 0, 0, rs*0.5f - 0.1f }), rs*0.5, rs*0.5, 250, 250, perlin);
+		TrimeshShape* meshFloor = TrimeshShape::GenerateNoiseQuad(GetWallTransform({ 0, 0,-rs*0.5f + 0.1f }), rs*2.0, rs*2.0, 1000, 1000, perlin);
+
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), meshWall1));
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.25f,0.25f }), meshWall2));
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.25f,0.25f,0.75f }), meshWall3));
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }, Vec3(10, 10, 10), 1), meshCeil));
 		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), meshFloor));
+
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.5f,0.5f,0.5f }, {}, 0.9f, MaterialType::MicrofacetBRDF),
+			new CylinderShape({ 0, 0, -2.0f }, { -1,1,1 }, 4, 1)));
 	}
 
 }
