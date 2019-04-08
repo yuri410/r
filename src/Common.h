@@ -13,7 +13,9 @@ class Scene;
 class SceneObject;
 struct Camera;
 struct Ray;
+struct Triangle;
 
 class Random;
+class PerlinNoise;
 
 typedef unsigned int uint;

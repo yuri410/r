@@ -84,7 +84,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Bvh.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Common.cpp" />
     <ClCompile Include="Geometry.cpp" />
@@ -96,7 +95,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BRDF.h" />
-    <ClInclude Include="Bvh.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="Geometry.h" />

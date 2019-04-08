@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.h"
+#include "Math.h"
 
 class IGeometry
 {
@@ -29,11 +30,8 @@ public:
 
 	bool Intersects(const Ray& ray, Vec3& point, Vec3& normal) override;
 
-	const Vec3* GetCorners() const { return m_corners; }
 private:
-	Vec3  m_corners[4];
-	Vec3  m_normal;
-	Vec3  m_edgeNormal[4];
+	PlanarConvexShape<4> m_quad;
 };
 
 class DiskShape : public IGeometry
@@ -42,9 +40,8 @@ public:
 	DiskShape(Vec3 center, Vec3 normal, float radius);
 
 	bool Intersects(const Ray& ray, Vec3& point, Vec3& normal) override;
-
+	
 private:
-
 	Vec3  m_center;
 	Vec3  m_normal;
 	float m_radius;
@@ -70,7 +67,33 @@ private:
 class TrimeshShape : public IGeometry
 {
 public:
+	TrimeshShape(const std::vector<Triangle>& triangles);
+	~TrimeshShape();
+
+	bool Intersects(const Ray& ray, Vec3& point, Vec3& normal) override;
+
+	static TrimeshShape* GenerateNoiseQuad(Vec3 pos, double xSpan, double ySpan, int xSegments, int ySegments, const PerlinNoise& noise);
 
 private:
+	struct BvhNode final
+	{
+		BoundingSphere m_boundingSphere;
 
+		std::vector<BvhNode> m_nodes;
+		std::vector<Triangle> m_triangles;
+
+		BvhNode() { }
+		BvhNode(const std::vector<Triangle>& triangles);
+		
+		BvhNode(BvhNode&&);
+		BvhNode& operator=(BvhNode&&);
+
+		BvhNode(const BvhNode&) = delete;
+		BvhNode& operator=(const BvhNode&) = delete;
+
+		bool Intersects(const Ray& ray, Vec3& point, Vec3& normal, float& nearestDist) const;
+
+	};
+
+	BvhNode m_rootNode;
 };

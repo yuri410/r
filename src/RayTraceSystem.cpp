@@ -108,6 +108,9 @@ void RayTraceSystem::CopyBufferData()
 
 void RayTraceSystem::ReportResult(int x, int y, Vec3 p)
 {
+	if (isnan(p.X) || isnan(p.Y) || isnan(p.Z))
+		return;
+
 	m_resultMutex.lock();
 	
 	int idx = y*m_imageWidth + x;

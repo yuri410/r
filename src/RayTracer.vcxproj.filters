@@ -9,7 +9,6 @@
     <ClCompile Include="RayTraceSystem.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Math.cpp" />
-    <ClCompile Include="Bvh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Geometry.h" />
@@ -21,6 +20,5 @@
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="BRDF.h" />
-    <ClInclude Include="Bvh.h" />
   </ItemGroup>
 </Project>

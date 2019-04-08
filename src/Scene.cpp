@@ -7,7 +7,7 @@
 
 Scene::Scene(float cameraAspectRatio, float cameraFovY)
 {
-	const int sceneId = 1;
+	const int sceneId = 2;
 
 	if (sceneId == 0)
 	{
@@ -73,24 +73,26 @@ Scene::Scene(float cameraAspectRatio, float cameraFovY)
 				m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.50f }, {5,5,5}, 1), new QuadShape(Vec3{ 0, 0, ws*0.5f }+cellPos, { 0, 0, -1 }, { -1, 0, 0 }, ws, ws)));
 
 				
-				{
-					m_sceneObjects.push_back(new SceneObject(
-						new Material(Vec3{ 0.5f,0.5f,0.5f }, { 150,150,150 }, 0),
-						new DiskShape(Vec3{ 0,-cellSize*0.5f,-ws*0.5f + 0.01f }+cellPos, { 0,0,1 }, lightRadius))
-					);
-				}
-				if (x == xcount - 1)
-				{
-					m_sceneObjects.push_back(new SceneObject(
-						new Material(Vec3{ 0.5f,0.5f,0.5f }, { 150,150,150 }, 0),
-						new DiskShape(Vec3{ 0,cellSize*0.5f,-ws*0.5f + 0.01f }+cellPos, { 0,0,1 }, lightRadius))
-					);
-				}
 				counter++;
 			}
 		}
 	}
-	
+	else if (sceneId == 2)
+	{
+		m_camera = new Camera({ 13, 2, 1 }, cameraFovY, cameraAspectRatio);
+
+		float rs = 8;
+
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), new QuadShape({ -rs*0.5f, 0, 0 }, { 1, 0,  0 }, { 0,  1, 0 }, rs, rs)));
+		//m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), new QuadShape({  rs*0.5f, 0, 0 }, { -1, 0,  0 }, { 0, -1, 0 }, rs, rs)));
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.25f,0.25f }), new QuadShape({ 0,-rs*0.5f, 0 }, { 0,  1, 0 }, { 0, 0,  1 }, rs, rs)));
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.25f,0.25f,0.75f }), new QuadShape({ 0, rs*0.5f, 0 }, { 0, -1, 0 }, { 0, 0, -1 }, rs, rs)));
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }, Vec3(10, 10, 10), 1), new QuadShape({ 0, 0, rs*0.5f }, { 0, 0, -1 }, { -1, 0, 0 }, rs, rs)));
+
+		PerlinNoise perlin(10.0, 0.1, 8, 8888);
+		TrimeshShape* meshFloor = TrimeshShape::GenerateNoiseQuad({ 0, 0,-rs*0.5f + 0.1f }, 5, 5, 250, 250, perlin);
+		m_sceneObjects.push_back(new SceneObject(new Material(Vec3{ 0.75f,0.75f,0.75f }), meshFloor));
+	}
 
 }
 
