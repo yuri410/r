@@ -7,29 +7,22 @@ SphereShape::SphereShape(Vec3 center, float radius)
 
 bool SphereShape::Intersects(const Ray& ray, Vec3& point, Vec3& normal)
 {
-	Vec3 sc = m_center - ray.m_origin;
-	float scLen = sc.Length();
-	sc = sc * (1.0f / scLen);
+    Vec3 sc = m_center - ray.m_origin;
+    float proj = ray.m_direction.Dot(sc);
+    if (proj > 0)
+    {
+        float distSq = (sc - ray.m_direction*proj).LengthSqr();
+        
+        if (distSq <= m_radius*m_radius)
+        {
+            float dd = sqrt(m_radius * m_radius - distSq);
+            
+            point = ray.m_origin + ray.m_direction * (proj - dd);
+            normal = (point - m_center).Normal();
 
-	float cosTheta = ray.m_direction.Dot(sc);
-
-	if (cosTheta > 0)
-	{
-		float sinTheta = sqrt(1 - cosTheta*cosTheta);
-		float dist = scLen*sinTheta;
-
-		if (dist <= m_radius)
-		{
-			const float dd = sqrt(m_radius * m_radius - dist * dist);
-			Vec3 t0 = ray.m_direction * (scLen*cosTheta - dd);
-			point = ray.m_origin + t0;
-
-			normal = (point - m_center).Normal();
-
-			return true;
-		}
-	}
-
+            return true;
+        }
+    }
 	return false;
 }
 
@@ -75,8 +68,8 @@ bool DiskShape::Intersects(const Ray& ray, Vec3& point, Vec3& normal)
 		Vec3 si = ray.m_origin + ray.m_direction*rayDist;
 
 		// inside the disk?
-		float d = (si - m_center).Length();
-		if (d < m_radius)
+		float d = (si - m_center).LengthSqr();
+		if (d < m_radius * m_radius)
 		{
 			normal = m_normal * (dist > 0 ? -1.0f : 1.0f);
 			point = si;
@@ -149,8 +142,8 @@ bool CylinderShape::IntersectsCap(const Ray& ray, const Vec3& capCenter, const V
 		Vec3 si = ray.m_origin + ray.m_direction*rayDist;
 
 		// inside the disk?
-		float d = (si - capCenter).Length();
-		if (d < m_radius)
+		float d = (si - capCenter).LengthSqr();
+		if (d < m_radius*m_radius)
 		{
 			normal = capNormal * (dist > 0 ? -1.0f : 1.0f);
 			point = si;

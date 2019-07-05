@@ -27,7 +27,7 @@ namespace
 
 Scene::Scene(float cameraAspectRatio, float cameraFovY)
 {
-	const int sceneId = 2;
+	const int sceneId = 1;
 
 	if (sceneId == 0)
 	{
